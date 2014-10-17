@@ -1,0 +1,20 @@
+<div class="container">
+    <div class="row">
+        <div id="demo">
+            <div id="tabs">
+                <ul>
+                    <!-- ko foreach: charts -->
+                    <li><a data-bind="attr: { href: '#charttab_' + id }" ><span data-bind="text: title"/></a></li>
+                    <!-- /ko -->
+                </ul>
+                <!-- ko foreach: charts -->
+                <div data-bind="attr: { id: 'charttab_' + id }">
+                    <!-- ko foreach: charts -->
+                    <div data-bind="attr: { id: 'chart_' + id }" style="width: 800px; height: 400px; margin: 0 auto"></div>
+                    <!-- /ko -->
+                </div>
+                <!-- /ko -->
+            </div>
+        </div>
+    </div>
+</div>

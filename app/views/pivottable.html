@@ -1,0 +1,18 @@
+<div class="container">
+    <div class="row">
+        <div id="demo">
+            <div id="tabs" style="display: none">
+                <ul>
+                    <!-- ko foreach: pivotTables -->
+                    <li><a data-bind="attr: { href: '#' + id }" ><span data-bind="text: title"/></a></li>
+                    <!-- /ko -->
+                </ul>
+                <!-- ko foreach: pivotTables -->
+                <div data-bind="attr: { id: id }">
+                    <p><div data-bind="html: html"></div></p>
+                </div>
+                <!-- /ko -->
+            </div>
+        </div>
+    </div>
+</div>
