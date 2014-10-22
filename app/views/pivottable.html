@@ -1,6 +1,16 @@
+<style type="text/css">
+    <!--
+
+    @media print
+    {
+        .noprint {display:none;}
+    }
+
+</style>
 <div class="container">
     <div class="row">
         <div id="demo">
+            <a class="btn btn-primary" data-bind="click: print">Print</a>
             <div id="tabs" style="display: none">
                 <ul>
                     <!-- ko foreach: pivotTables -->
@@ -8,7 +18,7 @@
                     <!-- /ko -->
                 </ul>
                 <!-- ko foreach: pivotTables -->
-                <div data-bind="attr: { id: id }">
+                <div class="report-container" data-bind="attr: { id: id }">
                     <p><div data-bind="html: html"></div></p>
                 </div>
                 <!-- /ko -->

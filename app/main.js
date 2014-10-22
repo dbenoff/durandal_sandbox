@@ -14,6 +14,9 @@ requirejs.config({
         'highcharts': '../bower_components/highcharts/highcharts',
         'reportsbase': 'viewmodels/reportsbase',
         'config': 'config/config',
+        'appstate': 'config/appstate',
+        'tabledefs': 'definitions/tabledefs',
+        'reportdefs': 'definitions/reportdefs',
     },
     shim: {
     bootstrap: {
@@ -58,11 +61,18 @@ define(['durandal/system', 'durandal/app', 'durandal/viewLocator', 'bootstrap', 
                 var value = valueAccessor();
                 if(ko.unwrap(value)){
                     $(element).fadeIn();
-                    //$("html, body").animate({ scrollTop: $(element).offset().top }, 1000);
+                    $("html, body").animate({ scrollTop: $(element).offset().top }, 1000);
                 } else {
                     $(element).fadeOut();
                 }
             }
         };
+
+        $body = $("body");
+
+        $(document).on({
+            ajaxStart: function() { $body.addClass("loading");    },
+            ajaxStop: function() { $body.removeClass("loading"); }
+        });
     });
 });

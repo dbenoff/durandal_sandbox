@@ -6,11 +6,26 @@
                     <div class="row">
                         <div class="col-md-8">
                             <div class="form-group">
+                                <label for="selectQuery">Which query would you like to run?</label>
+                                <select id="selectQuery" class="form-control"
+                                        data-bind="
+                                        options: queries,
+                                        optionsText: 'name',
+                                        optionsValue: 'value',
+                                        value: selectedQuery,
+                                        optionsCaption: 'Select...'">
+                                </select>
+                            </div>
+                            <div class="form-group" data-bind="fadeVisible: selectedQuery">
                                 <label for="selectGeoType">By what geographic definition do you want your data summarized?</label>
                                 <select id="selectGeoType" class="form-control"
-                                        data-bind="options: geographicTypes,
+                                        data-bind="
+                                        options: geographicTypes,
+                                        optionsText: 'name',
+                                        optionsValue: 'value',
                                         value: selectedGeographicType,
-                                        optionsCaption: 'Select...'"></select>
+                                        optionsCaption: 'Select...'">
+                                </select>
                             </div>
                             <div class="form-group"  data-bind="fadeVisible: selectedGeographicType">
                                 <label>
@@ -54,7 +69,9 @@
                                  && (useAssetFilter() == 'false' || assetFilters().length > 0)"
                                  style="padding-top: 20px">
                                 <!--<button type="submit" class="btn btn-primary" data-bind="click: executeQuery"></button>-->
-                                <a class="btn btn-primary" href="#/queryresults">Submit your query</a>
+                                <!--<a class="btn btn-primary" href="#/queryresults">Submit your query</a>-->
+                                <a class="btn btn-primary" data-bind="click: executeQuery">Submit your query</a>
+                                <a class="btn btn-primary" data-bind="click: resetObservables">Reset query</a>
                             </div>
                         </div>
 
@@ -62,8 +79,8 @@
                             <strong class="nav-header">Your selected options:</strong>
                             <ul class="nav nav-list">
 
-
-                                <li data-bind="fadeVisible: selectedGeographicType">Geographic definition: <span data-bind="text: selectedGeographicType"/></li>
+                                <li data-bind="fadeVisible: selectedQuery">Selected query: <span data-bind="text: selectedQuery"/></li>
+                                <li data-bind="fadeVisible: selectedGeographicType">Geographic definition: <span data-bind="text: selectedGeographicTypeDisplay"/></li>
                                 <li data-bind="fadeVisible: useGeographicFilter() == 'false'">No geographic filter</li>
                                 <li data-bind="visible: geoFilters().length > 0">Geographic areas selected:</li>
                                 <!-- ko foreach: geoFilters -->

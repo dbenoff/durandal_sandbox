@@ -15,32 +15,24 @@
                     <a data-bind="attr: { href: hash }, text: title"></a>
                 </li>
             </ul>
-            <form class="navbar-form navbar-right navbar-search" role="search" data-bind="submit: search">
-                <label for="global-search" class="sr-only">Search</label>
-                <div class="input-group">
-                    <input type="text" id="global-search" name="global-search" class="form-control" placeholder="Search..." />
-                    <span class="input-group-btn">
-                        <button class="btn btn-default" type="button">
-                            <span class="sr-only">Search</span>
-                            <span class="glyphicon glyphicon-search"></span>
-                        </button>
-                    </span>
-                </div>
-            </form>
+            <ul class="nav navbar-nav navbar-right">
+                <img class="x-img x-img-default" style="height:60px;" id="LogoImg-1013" src="assets/logo.png">
+            </ul>
         </div>
     </div>
 </header>
 <div class="router-loader" data-bind="visible: router.isNavigating">
     <i class="fa fa-spinner fa-2x fa-spin active"></i>
 </div>
-<section id="main" class="container" data-bind="router: { transition:'entrance', cacheViews:true }"></section>
-
-<!--<footer class="well">
-    This is your footer
-</footer>-->
+<section id="main" class="container" data-bind="router: { transition:'entrance', cacheViews:false }"></section>
 
 <div class="footer well">
     <div class="container">
-        <p>Hello from footer.</p>
+        <p class="navbar-left">Portions Copyright © 2014 by Cambridge Systematics, Inc.</p>
+        <p class="navbar-right">Release Version 0.0.1.2</p>
     </div>
+</div>
+<div class="modal"></div>
+<div style="display:none" id="div-dialog-warning">
+    <p><span class="ui-icon ui-icon-alert" style="float:left; margin:0 7px 20px 0;"></span><span id="div-dialog-warning-message"/><div/></p>
 </div>

@@ -41,7 +41,7 @@ module.exports = function (grunt) {
                     'durandal': '../bower_components/durandal/js',
                     'plugins': '../bower_components/durandal/js/plugins',
                     'transitions': '../bower_components/durandal/js/transitions',
-                    'knockout': '../bower_components/knockout.js/knockout',
+                    'knockout': '../bower_components/knockout.js/knockout.debug',
                     'jquery': '../bower_components/jquery/jquery',
                     'bootstrap': '../bower_components/bootstrap/dist/js/bootstrap',
                     'modernizr': '../bower_components/modernizr/modernizr',
@@ -51,6 +51,9 @@ module.exports = function (grunt) {
                     'highcharts': '../bower_components/highcharts/highcharts',
                     'reportsbase': 'viewmodels/reportsbase',
                     'config': 'config/config',
+                    'appstate': 'config/appstate',
+                    'tabledefs': 'definitions/tabledefs',
+                    'reportdefs': 'definitions/reportdefs',
                 },
 
                 shim: {
@@ -111,10 +114,10 @@ module.exports = function (grunt) {
                         dest: '<%= paths.temp %>/<%= paths.css %>/',
                         ext: '.css'
                     },
-                    {
+                    /*{
                         src: 'bower_components/bootstrap/less/bootstrap.less',
                         dest: '<%= paths.temp %>/<%= paths.css %>/bootstrap.css'
-                    },
+                    },*/
                     {
                         src: 'bower_components/font-awesome/less/font-awesome.less',
                         dest: '<%= paths.temp %>/<%= paths.css %>/font-awesome.css'
@@ -151,12 +154,14 @@ module.exports = function (grunt) {
             },
             styles: {
                 src: [
-                    '<%= paths.temp %>/<%= paths.css %>/bootstrap.css',
+                    'bower_components/bootswatch/cerulean/bootstrap.css',
+                    /*'<%= paths.temp %>/<%= paths.css %>/bootstrap.css',*/
                     '<%= paths.temp %>/<%= paths.css %>/font-awesome.css',
                     'css/sticky_footer.css',
                     'bower_components/durandal/css/durandal.css',
                     'bower_components/datatables/media/css/jquery.dataTables.css',
-                    'bower_components/jqueryui/themes/smoothness/jquery-ui.css'
+                    'bower_components/jqueryui/themes/base/*.css',
+                    'bower_components/jstree/dist/themes/default/style.css',
                 ],
                 dest: '<%= paths.build %>/<%= paths.css %>/libs.css'
             }
@@ -192,6 +197,12 @@ module.exports = function (grunt) {
                             '<%= paths.assets %>/**/*.*',
                             '!<%= paths.assets %>/**/*.{gif,jpeg,jpg,png,svg}'
                         ]
+                    },
+                    {
+                        expand: true,
+                        cwd: 'bower_components/bootstrap/dist/',
+                        src: 'assets/**/*.{json}',
+                        dest: '<%= paths.build %>/assets'
                     },
                     {
                         expand: true,
@@ -247,6 +258,21 @@ module.exports = function (grunt) {
                     cwd: '<%= paths.assets %>/',
                     src: '**/*.{gif,jpeg,jpg,png}',
                     dest: '<%= paths.build %>/<%= paths.assets %>/'
+                },{
+                    expand: true,
+                    cwd: 'bower_components/jqueryui/themes/base/images/',
+                    src: '**/*.{gif,jpeg,jpg,png}',
+                    dest: '<%= paths.build %>/css/images/'
+                },{
+                    expand: true,
+                    cwd: 'bower_components/jstree/dist/themes/default/',
+                    src: '**/*.{gif,jpeg,jpg,png}',
+                    dest: '<%= paths.build %>/css'
+                },{
+                    expand: true,
+                    cwd: 'bower_components/datatables/media/images/',
+                    src: '**/*.{gif,jpeg,jpg,png}',
+                    dest: '<%= paths.build %>/images'
                 }]
             }
         },
@@ -406,7 +432,8 @@ module.exports = function (grunt) {
 
     grunt.registerTask('test', ['clean:server', 'copy:styles', 'autoprefixer:watch', 'connect:test', 'mocha']);
     grunt.registerTask('build', ['clean:release', 'concurrent:release', 'concat', 'autoprefixer:release', 'htmlbuild', 'htmlmin']);
-    grunt.registerTask('default', ['newer:jshint', 'test', 'build']);
+    //grunt.registerTask('default', ['newer:jshint', 'test', 'build']);
+    grunt.registerTask('default', ['test', 'build']);
 
     grunt.registerTask('serve', ['clean:server', 'concurrent:server', 'autoprefixer:watch', 'connect:livereload', 'watch']);
     grunt.registerTask('serve-build', ['build', 'connect:release:keepalive']);

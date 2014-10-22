@@ -1,4 +1,4 @@
-define(["knockout", "durandal/app", "durandal/system", "highcharts", 'plugins/http',  'jquery-ui'], function (ko, app, system, highcharts, http, jqueryui) {
+define(["knockout", "durandal/app", "durandal/system", "highcharts", 'plugins/http', 'jquery-ui'], function (ko, app, system, highcharts, http, jqueryui) {
     var
     // Public Properties
         todos = ko.observableArray(),

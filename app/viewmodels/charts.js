@@ -1,161 +1,122 @@
-define(['plugins/http', 'durandal/app', 'knockout', 'bootstrap', 'jquery-ui', 'reportsbase', 'highcharts'],
-    function (http, app, ko, bootstrap, jqueryui, reportsbase, highcharts) {
+define(['durandal/system', 'plugins/http', 'durandal/app', 'knockout', 'bootstrap', 'jquery-ui', 'reportsbase', 'highcharts', 'appstate', 'reportdefs'],
+    function (system, http, app, ko, bootstrap, jqueryui, reportsbase, highcharts, appstate, reportdefs) {
+
 
         this.reportsbase = reportsbase;
 
-        return {
+        return{
 
+            chartDataArr: null,
+            reportdef: null,
             charts: ko.observableArray([]),
 
-            binding: function () {
-                console.log('!!!binding charts');
-                //return { cacheViews: false }; //cancels view caching for this module, allowing the triggering of the detached callback
-
-                var that = this;
-                $.get( "results.json",
-                    function(queryData) {
-
-                        var requests = [];
-                        var featureData = queryData['RouteFeatureResults'];
-
-                        var reportRequest = {
-                            type: 'bar',
-                            results:featureData,
-                            headers: ['Jurisdiction', 'Functional Class', 'Miles', 'Lane Miles'],
-                            fields: ['Jurisdiction', 'FunctionalClass', 'Length', 'LaneMiles'],
-                            levels: ['Jurisdiction', 'FunctionalClass'],
-                            sums: ['Length', 'LaneMiles'],
-                            averages: [],
-                            title: 'Roads'
-                        };
-
-                        requests.push(reportRequest);
-
-                        var featureData = queryData['BridgeFeatureResults'];
-
-                        var reportRequest = {
-                            type: 'bar',
-                            results:featureData,
-                            headers: ['Jurisdiction', 'Functional Class', 'Miles', 'Lane Miles'],
-                            fields: ['Jurisdiction', 'FunctionalClass', 'Length', 'LaneMiles'],
-                            levels: ['Jurisdiction', 'FunctionalClass'],
-                            sums: ['Length', 'LaneMiles'],
-                            averages: [],
-                            title: 'Bridges'
-                        };
-
-                        requests.push(reportRequest);
-
-                        that.selectChart(requests);
+            activate: function () {
+                var data = appstate.queryResults;
+                var queryName = appstate.queryName;
+                var charts;
+                if(data && queryName){
+                    this.reportdef = reportdefs[queryName];
+                    charts = this.prepareCharts(data, this.reportdef);
+                }
+                if (charts.length < 1) {
+                    app.showMessage('No results available to display, please execute a query.', 'Error').then(function (dialogResult) {
+                        router.navigate('queryconfig');
                     });
-            },
-            bindingComplete: function () {
-                console.log('!!!bindingComplete charts');
-            },
-            detached: function (view) {
-                console.log('!!!detached charts');
-            },
-            compositionComplete: function (view, parent) {
-                console.log('!!!compositionComplete charts');
+                    return;
+                }
+                this.charts(charts);
             },
 
-
-            attached: function (view, parent) {
-
-                console.log('!!!attached charts');
-
+            attached: function () {
                 var charts = this.charts();
+
                 //create charts
-                $.each(charts, function( index, chartTabPanel ) {
+                $.each(charts, function (index, chartTabPanel) {
                     var that = this;
                     that.chartTabPanel = chartTabPanel;
-                   var chartElements = chartTabPanel.charts;
-                   $.each(chartElements, function (index, chartElement) {
+                    var chartElements = chartTabPanel.charts;
+                    $.each(chartElements, function (index, chartElement) {
 
-                       that.chartElement = chartElement;
-                       that.categories = [];
+                        that.chartElement = chartElement;
+                        that.categories = [];
 
-                       $.each(chartElement.datapoints, function (index, datapoint) {
-                           that.categories.push(datapoint.name);
-                       });
+                        $.each(chartElement.datapoints, function (index, datapoint) {
+                            that.categories.push(datapoint.name);
+                        });
 
-                       //the first header that isn't a summary level is the metric we're graphing
-                       that.axisTitle = (that.chartTabPanel.request.headers[that.chartTabPanel.request.levels.length]);
-                       that.datapoints = $.map(chartElement.datapoints, function( datapoint ) {
-                           return Number(datapoint.metric);
-                       });
+                        //the first header that isn't a summary level is the metric we're graphing
+                        that.axisTitle = (that.reportdef.headers[that.reportdef.levels.length]);
+                        that.datapoints = $.map(chartElement.datapoints, function (datapoint) {
+                            return Number(datapoint.metric);
+                        });
 
-                       that.chartTitle = that.chartTabPanel.title
-                           + ' By ' + chartElement.level
-                           + ' For ' + chartElement.text;
+                        that.chartTitle = that.chartTabPanel.title
+                            + ' By ' + chartElement.level
+                            + ' For ' + chartElement.text;
 
-                       $("#chart_" + chartElement.id).highcharts({
-                           chart: {
-                               type: 'column'
-                           },
-                           legend: {
-                               enabled: false,
-                           },
-                           title: {
-                               text: that.chartTitle
-                           },
-                          /* subtitle: {
-                               text: 'Source: WorldClimate.com'
-                           },*/
-                           xAxis: {
-                               categories: that.categories
-                           },
-                           yAxis: {
-                               min: 0,
-                               title: {
-                                   text: that.axisTitle
-                               }
-                           },
-                           tooltip: {
-                               headerFormat: '<span style="font-size:10px">{point.key}</span><table>',
-                               pointFormat: '<tr><td style="padding:0"><b>{point.y:.1f} ' + that.axisTitle + '</b></td></tr>',
-                               footerFormat: '</table>',
-                               shared: true,
-                               useHTML: true
-                           },
-                           plotOptions: {
-                               column: {
-                                   pointPadding: 0.2,
-                                   borderWidth: 0
-                               }
-                           },
-                           series: [{
-                               data: that.datapoints
-                           }]
-                       });
-                   });
+                        $("#chart_" + chartElement.id).highcharts({
+                            chart: {
+                                type: 'column'
+                            },
+                            legend: {
+                                enabled: false,
+                            },
+                            title: {
+                                text: that.chartTitle
+                            },
+                            /* subtitle: {
+                             text: 'Source: WorldClimate.com'
+                             },*/
+                            xAxis: {
+                                categories: that.categories
+                            },
+                            yAxis: {
+                                min: 0,
+                                title: {
+                                    text: that.axisTitle
+                                }
+                            },
+                            tooltip: {
+                                headerFormat: '<span style="font-size:10px">{point.key}</span><table>',
+                                pointFormat: '<tr><td style="padding:0"><b>{point.y:.1f} ' + that.axisTitle + '</b></td></tr>',
+                                footerFormat: '</table>',
+                                shared: true,
+                                useHTML: true
+                            },
+                            plotOptions: {
+                                column: {
+                                    pointPadding: 0.2,
+                                    borderWidth: 0
+                                }
+                            },
+                            series: [
+                                {
+                                    data: that.datapoints
+                                }
+                            ]
+                        });
+                    });
                 });
 
                 //create tabs
 
-               $("#tabs").tabs();
+                $("#tabs").tabs();
             },
 
 
-            selectChart: function(chartRequests) {
+            prepareCharts: function (data, reportdef) {
 
-                if(!chartRequests instanceof Array){
-                    var arr = [];
-                    arr.push(chartRequests);
-                    chartRequests = arr;
-                }
-
-                this.validateRequests(chartRequests);
+                this.validateRequests(data, reportdef);
 
                 var chartTabSet = [];
                 //each chartRequest in the array represents a tabbed panel containing a chart for each node in the tree of aggregated data
-                $.each(chartRequests, function (index, chartRequest) {
-                    var featureData = chartRequest.results;
-                    var tree = reportsbase.buildHierarchy(featureData, chartRequest);  //create the tree based on the levels defined in request
+                $.each(reportdef.tabs, function (index, tab) {
+                    var featureData = data[reportdef.dataKeys[index]];
+                    var tree = reportsbase.buildHierarchy(featureData, reportdef);  //create the tree based on the levels defined in request
                     var chartTabPanel = {};
-                    chartTabPanel.request = chartRequest;
+                    chartTabPanel.reportdef = reportdef;
                     chartTabPanel.id = index;
-                    chartTabPanel.title = chartRequest.title;
+                    chartTabPanel.title = tab
                     chartTabPanel.charts = [];
                     var outerIndex = index;
                     $.each(tree, function (index, root) {
@@ -175,24 +136,44 @@ define(['plugins/http', 'durandal/app', 'knockout', 'bootstrap', 'jquery-ui', 'r
                     });
                     chartTabSet.push(chartTabPanel);
                 });
-                this.charts(chartTabSet);
+                return chartTabSet;
             },
 
 
-            validateRequests: function(chartRequests){
-                $.each(chartRequests, function (index, chartRequest) {
-                    if(chartRequest.levels.length > 2) {
-                        throw new Error('Invalid chart configuration');
-                    }
-                    var featureData = chartRequest.results;
+            validateRequests: function (data, reportdef) {
+                if (reportdef.levels.length > 2) {
+                    throw new Error('Invalid chart configuration');
+                }
+
+                $.each(reportdef.dataKeys, function (index, dataKey) {
+
+                    var featureData = data[dataKey];
                     $.each(featureData, function (index, feature) {
-                        if(feature['Length'] && feature['NumberOfLanes']){
-                            feature.LaneMiles  = feature['Length'] * feature['NumberOfLanes']
-                        }else{
+                        if (feature['Length'] && feature['NumberOfLanes']) {
+                            feature.LaneMiles = feature['Length'] * feature['NumberOfLanes']
+                        } else {
                             feature.LaneMiles = 0;
                         }
                     });
                 });
+            },
+
+            print: function () {
+                var printOutput = $('<div></div>');
+
+                $('#tabs ul > li > a').each(function (index, tab) {
+                    var tabTitle = $(tab).find('span').text();
+                    printOutput.append('<div class="chart-printout">Charts For Tab: ' + tabTitle + '</div>');
+                    var chartDivId = tab.href.split('#')[1];
+                    $('#' + chartDivId).find('.chart-container').each(function (index, chartContainer) {
+                        printOutput.append($(chartContainer).clone());
+                    });
+                });
+
+                var popupWin = window.open('', '_blank', 'width=800,height=600');
+                popupWin.document.open()
+                popupWin.document.write('<html><head><link rel="stylesheet" type="text/css" href="style.css" /></head><body onload="window.print()">' + printOutput.html() + '</html>');
+                popupWin.document.close();
             },
 
         };
