@@ -1,52 +1,81 @@
-define(['plugins/http', 'durandal/app', 'knockout', 'jstree', 'bootstrap', 'datatables', 'jquery-ui', 'reportsbase', 'reportdefs', 'appstate', 'plugins/router'],
-    function (http, app, ko, jstree, bootstrap, datatables, jqueryui, reportsbase, reportdefs, appstate, router) {
-
-        this.reportsbase = reportsbase;
+define(['plugins/http', 'durandal/app', 'knockout', 'jstree', 'bootstrap', 'datatables', 'jquery-ui', './reportsbase', '../definitions/reportdefs', '../config/appstate', 'plugins/router', '../config/config'],
+    function (http, app, ko, jstree, bootstrap, datatables, jqueryui, reportsbase, reportdefs, appstate, router, config) {
 
         return {
 
             pivotTables: ko.observableArray([]),
+            levelOrders: ko.observableArray([]),
+            selectedOrder: ko.observable(),
+            reportdef:null,
+            configuredReports: [],
 
-            binding: function () {
-
+            activate: function () {
+                this.resetObservables();
                 var data = appstate.queryResults;
                 var queryName = appstate.queryName;
-                var reportdef = $.extend({},reportdefs[queryName]); //make a local copy of the report def since we'll be modifying it
-                var configuredReports = [];
+
                 if (data && queryName) {
-                    $(reportdef.tabs).each(function (index, tabname) {
-                        var dataKey = reportdef.dataKeys[index];
+                    this.reportdef = $.extend({}, reportdefs[queryName]); //make a local copy of the report def since we'll be modifying it
+                    this.selectedOrder(this.reportdef.levelOrders[0].name); //set default
+                    this.levelOrders(this.reportdef.levelOrders);
+                    this.selectedOrder.subscribe(function (newValue) {
+                        that.refreshTables();
+                    });
+                    var that = this;
+                    $(this.reportdef.tabs).each(function (index, tabname) {
+                        var dataKey = that.reportdef.dataKeys[index];
                         if (data[dataKey] && data[dataKey].length > 0) {
                             var report = {};
                             report.title = tabname;
                             report.data = data[dataKey];
                             report.id = index;
-                            configuredReports.push(report);
+                            that.configuredReports.push(report);
                         }
                     });
-                }
-                if (configuredReports.length < 1) {
-                    app.showMessage('No results available to display, please execute a query.', 'Error').then(function (dialogResult) {
+                    this.selectReport();
+                } else {
+                    app.showMessage(config.noResultsMessage.message, config.noResultsMessage.title).then(function (dialogResult) {
                         router.navigate('queryconfig');
                     });
                     return;
                 }
-                this.selectReport(configuredReports, reportdef)
             },
 
-            compositionComplete: function (view, parent) {
-                if(this.pivotTables().length > 0){
+            resetObservables: function(){
+                this.pivotTables([]);
+                this.levelOrders([]);
+                this.selectedOrder(null);
+                this.reportdef = null,
+                this.configuredReports = [];
+            },
+
+            refreshTables: function(){
+                var that = this;
+                $.each(this.levelOrders(), function (index, levelOrder) {
+                    if(levelOrder.name == that.selectedOrder()){
+                        that.reportdef.levels = levelOrder.value;
+                    }
+                });
+                this.selectReport();
+                this.compositionComplete();
+            },
+
+            compositionComplete: function () {
+                if (this.pivotTables().length > 0) {
+                    //create tabs
+                    if ($("#tabs").data("ui-tabs")) {  //destroy tabs if they exist already
+                        $("#tabs").tabs("destroy");
+                    }
                     $("#tabs").tabs();
                     $("#tabs").show();
                 }
             },
 
-            selectReport: function (configuredReports, reportdef) {
+            selectReport: function () {
 
                 var that = this;
                 that.pivotTablesArray = [];
-                that.reportdef = reportdef;
-                $.each(configuredReports, function (index, report) {
+                $.each(that.configuredReports, function (index, report) {
 
                     var featureData = report.data;
 
@@ -92,20 +121,20 @@ define(['plugins/http', 'durandal/app', 'knockout', 'jstree', 'bootstrap', 'data
 
 
                     var tree = root.children;
-                    that.buildTable(tree, summaryGrid, reportdef);  //add the data to the table
+                    that.buildTable(tree, summaryGrid, that.reportdef);  //add the data to the table
 
                     //now add a summary section below that aggregates by the second dimension
-                    var topLevel = reportdef.levels.shift();
-                    tree = reportsbase.buildHierarchy(featureData, reportdef);
+                    var topLevel = that.reportdef.levels.shift();
+                    tree = reportsbase.buildHierarchy(featureData, that.reportdef);
                     var summaryRoot = {};
                     summaryRoot.level = topLevel;
-                    summaryRoot.text = "All " + topLevel + "s";
+                    var topleveltitle = that.reportdef.headers[that.reportdef.fields.indexOf(topLevel)];
+                    topleveltitle = /s$/.test(topleveltitle) ? topleveltitle + "es" : topleveltitle + 's';
+                    summaryRoot.text = "All " + topleveltitle;
                     summaryRoot.children = tree;
 
-
-
-                    reportdef.levels.unshift(topLevel);  //put the level back in so the column offsets are correct
-                    $.each(reportdef.sums, function (index, sum) {
+                    that.reportdef.levels.unshift(topLevel);  //put the level back in so the column offsets are correct
+                    $.each(that.reportdef.sums, function (index, sum) {
                         $.each(summaryRoot.children, function (index, child) {
                             if (!summaryRoot[sum]) {
                                 summaryRoot[sum] = 0;
@@ -114,10 +143,10 @@ define(['plugins/http', 'durandal/app', 'knockout', 'jstree', 'bootstrap', 'data
                         });
                     });
 
-                    that.buildTable([summaryRoot], summaryGrid, reportdef);  //add the data to the table
+                    that.buildTable([summaryRoot], summaryGrid, that.reportdef);  //add the data to the table
 
-                    var columnCount = reportdef.headers.length;
-                    var table = '<p class=\"reportheader\">ADOT&PF ' + report.title + ' By ' + reportdef.headers[0] + ', Then By ' + reportdef.headers[1];
+                    var columnCount = that.reportdef.headers.length;
+                    var table = '<p class=\"reportheader\">ADOT&PF ' + report.title + ' ' + that.selectedOrder();//' By ' + that.reportdef.headers[0] + ', Then By ' + that.reportdef.headers[1];
                     table = table.concat('<table class="gridtable"><tbody><tr>');
                     var rowcount = 0;
                     $.each(summaryGrid.cells, function (index, cell) {
@@ -135,7 +164,7 @@ define(['plugins/http', 'durandal/app', 'knockout', 'jstree', 'bootstrap', 'data
                     table.concat('</tr></tbody></table>');
                     var pivotTable = {};
                     pivotTable.html = table.toString()
-                    pivotTable.title = reportdef.tabs[index];
+                    pivotTable.title = that.reportdef.tabs[index];
                     pivotTable.id = "pivotTable-" + index;
                     that.pivotTablesArray.push(pivotTable);
                 });
@@ -196,7 +225,7 @@ define(['plugins/http', 'durandal/app', 'knockout', 'jstree', 'bootstrap', 'data
             buildTable: function (tree, table, reportdef) {
                 var that = this;
                 $.each(tree, function (index, node) {
-                    if(!node.text){
+                    if (!node.text) {
                         console.log(node);
                     }
                     var levelIndex = reportdef.levels.indexOf(node.level);

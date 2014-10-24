@@ -2,10 +2,6 @@
     return {
         router: router,
 
-        search: function () {
-            app.showMessage("Not Implemented", "Error");
-        },
-
         activate: function () {
             router.map([
                 { route: '', moduleId: 'viewmodels/home', title: "Home", nav: true },

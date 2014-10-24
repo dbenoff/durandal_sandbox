@@ -2,6 +2,7 @@
 'use strict';
 
 module.exports = function (grunt) {
+    grunt.loadNpmTasks('grunt-debug-task');
     require('load-grunt-tasks')(grunt); // Load grunt tasks automatically
     require('time-grunt')(grunt); // Time how long tasks take. Can help when optimizing build times
 
@@ -49,11 +50,8 @@ module.exports = function (grunt) {
                     'jstree': '../bower_components/jstree/dist/jstree',
                     'datatables': '../bower_components/datatables/media/js/jquery.dataTables',
                     'highcharts': '../bower_components/highcharts/highcharts',
-                    'reportsbase': 'viewmodels/reportsbase',
-                    'config': 'config/config',
-                    'appstate': 'config/appstate',
-                    'tabledefs': 'definitions/tabledefs',
-                    'reportdefs': 'definitions/reportdefs',
+                    'cookie': '../assets/js/jquery-cookie',
+                    'validator': '../bower_components/bootstrapvalidator/dist/js/bootstrapValidator',
                 },
 
                 shim: {

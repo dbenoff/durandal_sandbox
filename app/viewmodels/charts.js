@@ -1,40 +1,73 @@
-define(['durandal/system', 'plugins/http', 'durandal/app', 'knockout', 'bootstrap', 'jquery-ui', 'reportsbase', 'highcharts', 'appstate', 'reportdefs'],
-    function (system, http, app, ko, bootstrap, jqueryui, reportsbase, highcharts, appstate, reportdefs) {
-
-
-        this.reportsbase = reportsbase;
+define(['durandal/system', 'plugins/http', 'durandal/app', 'knockout', 'bootstrap', 'jquery-ui', './reportsbase', 'highcharts', '../config/appstate', '../definitions/reportdefs', 'plugins/router', '../config/config'],
+    function (system, http, app, ko, bootstrap, jqueryui, reportsbase, highcharts, appstate, reportdefs, router, config) {
 
         return{
 
-            chartDataArr: null,
+            chartsRawData: null,
             reportdef: null,
             charts: ko.observableArray([]),
+            graphMetrics: ko.observableArray([]),
+            selectedMetric: ko.observable(),
+            levelOrders: ko.observableArray([]),
+            selectedOrder: ko.observable(),
 
             activate: function () {
                 var data = appstate.queryResults;
                 var queryName = appstate.queryName;
-                var charts;
-                if(data && queryName){
-                    this.reportdef = reportdefs[queryName];
-                    charts = this.prepareCharts(data, this.reportdef);
-                }
-                if (charts.length < 1) {
-                    app.showMessage('No results available to display, please execute a query.', 'Error').then(function (dialogResult) {
+                if (data && queryName) {
+                    this.chartsRawData = data;
+                    this.reportdef = $.extend({}, reportdefs[queryName]); //make a local copy of the report def since we'll be modifying it
+                    this.graphMetrics(this.reportdef.graphMetrics);
+                    this.selectedMetric(this.reportdef.graphMetrics[0].value); //set default
+                    this.selectedOrder(this.reportdef.levelOrders[0].name); //set default
+                    this.levelOrders(this.reportdef.levelOrders)
+                    var that = this;
+                    this.selectedMetric.subscribe(function (newValue) {
+                        that.refreshCharts();
+                    });
+                    this.selectedOrder.subscribe(function (newValue) {
+                        that.refreshCharts();
+                    });
+                    this.charts(this.prepareCharts(data, this.reportdef));
+                } else {
+                    app.showMessage(config.noResultsMessage.message, config.noResultsMessage.title).then(function (dialogResult) {
                         router.navigate('queryconfig');
                     });
                     return;
                 }
-                this.charts(charts);
             },
 
+            //DOM is ready, populate the chart divs
             attached: function () {
-                var charts = this.charts();
+                this.renderCharts();
+            },
 
+            //selection changed by user, refresh the charts
+            refreshCharts: function(){
+                var that = this;
+                $.each(this.levelOrders(), function (index, levelOrder) {
+                    if(levelOrder.name == that.selectedOrder()){
+                        that.reportdef.levels = levelOrder.value;
+                    }
+                });
+
+                var charts = this.prepareCharts(this.chartsRawData, this.reportdef);
+                this.charts(charts);
+                this.renderCharts();
+            },
+
+            renderCharts: function () {
+                var charts = this.charts();
+                var metric = this.selectedMetric();
+                var graphMetrics = this.graphMetrics();
+                var reportdef = this.reportdef;
                 //create charts
+
                 $.each(charts, function (index, chartTabPanel) {
                     var that = this;
                     that.chartTabPanel = chartTabPanel;
                     var chartElements = chartTabPanel.charts;
+                    var topleveltitle = that.reportdef.headers[that.reportdef.fields.indexOf(that.reportdef.levels[1])]
                     $.each(chartElements, function (index, chartElement) {
 
                         that.chartElement = chartElement;
@@ -44,14 +77,18 @@ define(['durandal/system', 'plugins/http', 'durandal/app', 'knockout', 'bootstra
                             that.categories.push(datapoint.name);
                         });
 
-                        //the first header that isn't a summary level is the metric we're graphing
-                        that.axisTitle = (that.reportdef.headers[that.reportdef.levels.length]);
+                        $.each(graphMetrics, function (index, graphMetric) {
+                            if(metric == graphMetric.value){
+                                that.axisTitle = graphMetric.name;
+                            }
+                        });
+
                         that.datapoints = $.map(chartElement.datapoints, function (datapoint) {
                             return Number(datapoint.metric);
                         });
 
                         that.chartTitle = that.chartTabPanel.title
-                            + ' By ' + chartElement.level
+                            + ' By ' + topleveltitle
                             + ' For ' + chartElement.text;
 
                         $("#chart_" + chartElement.id).highcharts({
@@ -97,9 +134,10 @@ define(['durandal/system', 'plugins/http', 'durandal/app', 'knockout', 'bootstra
                         });
                     });
                 });
-
                 //create tabs
-
+                if ($("#tabs").data("ui-tabs")) {  //destroy tabs if they exist already
+                    $("#tabs").tabs("destroy");
+                }
                 $("#tabs").tabs();
             },
 
@@ -107,11 +145,12 @@ define(['durandal/system', 'plugins/http', 'durandal/app', 'knockout', 'bootstra
             prepareCharts: function (data, reportdef) {
 
                 this.validateRequests(data, reportdef);
-
+                var metric = this.selectedMetric();
                 var chartTabSet = [];
                 //each chartRequest in the array represents a tabbed panel containing a chart for each node in the tree of aggregated data
                 $.each(reportdef.tabs, function (index, tab) {
                     var featureData = data[reportdef.dataKeys[index]];
+                    if(!featureData) return true;
                     var tree = reportsbase.buildHierarchy(featureData, reportdef);  //create the tree based on the levels defined in request
                     var chartTabPanel = {};
                     chartTabPanel.reportdef = reportdef;
@@ -125,9 +164,10 @@ define(['durandal/system', 'plugins/http', 'durandal/app', 'knockout', 'bootstra
                         chart.level = root.level;
                         chart.text = root.text;
                         $.each(root.children, function (index, child) {
+
                             var datapoint = {
                                 name: child.text,
-                                metric: Math.round(child.Length).toString()
+                                metric: Math.round(child[metric]).toString()
                             }
                             chart.datapoints.push(datapoint);
                         });
@@ -148,13 +188,15 @@ define(['durandal/system', 'plugins/http', 'durandal/app', 'knockout', 'bootstra
                 $.each(reportdef.dataKeys, function (index, dataKey) {
 
                     var featureData = data[dataKey];
-                    $.each(featureData, function (index, feature) {
-                        if (feature['Length'] && feature['NumberOfLanes']) {
-                            feature.LaneMiles = feature['Length'] * feature['NumberOfLanes']
-                        } else {
-                            feature.LaneMiles = 0;
-                        }
-                    });
+                    if(featureData){
+                        $.each(featureData, function (index, feature) {
+                            if (feature['Length'] && feature['NumberOfLanes']) {
+                                feature.LaneMiles = feature['Length'] * feature['NumberOfLanes']
+                            } else {
+                                feature.LaneMiles = 0;
+                            }
+                        });
+                    }
                 });
             },
 

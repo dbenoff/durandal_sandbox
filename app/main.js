@@ -12,24 +12,21 @@ requirejs.config({
         'jstree': '../bower_components/jstree/dist/jstree',
         'datatables': '../bower_components/datatables/media/js/jquery.dataTables',
         'highcharts': '../bower_components/highcharts/highcharts',
-        'reportsbase': 'viewmodels/reportsbase',
-        'config': 'config/config',
-        'appstate': 'config/appstate',
-        'tabledefs': 'definitions/tabledefs',
-        'reportdefs': 'definitions/reportdefs',
+        'cookie': '../assets/js/jquery-cookie',
+        'validator': '../bower_components/bootstrapvalidator/dist/js/bootstrapValidator',
     },
     shim: {
-    bootstrap: {
+        bootstrap: {
             deps: ['jquery'],
             exports: 'jQuery'
         },
-    modernizr: {
+        modernizr: {
             exports: 'Modernizr'
         }
     }
 });
 
-define(['durandal/system', 'durandal/app', 'durandal/viewLocator', 'bootstrap', 'knockout'],  function (system, app, viewLocator, bootstrap,    ko) {
+define(['durandal/system', 'durandal/app', 'durandal/viewLocator', 'bootstrap', 'knockout'], function (system, app, viewLocator, bootstrap, ko) {
     //>>excludeStart("build", true);
     system.debug(true);
     //>>excludeEnd("build");
@@ -37,12 +34,12 @@ define(['durandal/system', 'durandal/app', 'durandal/viewLocator', 'bootstrap', 
     app.title = "";
 
     app.configurePlugins({
-        router:true,
+        router: true,
         dialog: true,
         widget: true
     });
 
-    app.start().then(function() {
+    app.start().then(function () {
         // Replace 'viewmodels' in the moduleId with 'views' to locate the view.
         // Look for partial views in a 'views' folder in the root.
         viewLocator.useConvention();
@@ -51,15 +48,15 @@ define(['durandal/system', 'durandal/app', 'durandal/viewLocator', 'bootstrap', 
         app.setRoot('viewmodels/shell');
 
         ko.bindingHandlers.fadeVisible = {
-            init: function(element, valueAccessor) {
+            init: function (element, valueAccessor) {
                 // Initially set the element to be instantly visible/hidden depending on the value
                 var value = valueAccessor();
                 $(element).toggle(ko.unwrap(value)); // Use "unwrapObservable" so we can handle values that may or may not be observable
             },
-            update: function(element, valueAccessor) {
+            update: function (element, valueAccessor) {
                 // Whenever the value subsequently changes, slowly fade the element in or out
                 var value = valueAccessor();
-                if(ko.unwrap(value)){
+                if (ko.unwrap(value)) {
                     $(element).fadeIn();
                     $("html, body").animate({ scrollTop: $(element).offset().top }, 1000);
                 } else {
@@ -68,11 +65,42 @@ define(['durandal/system', 'durandal/app', 'durandal/viewLocator', 'bootstrap', 
             }
         };
 
+        ko.bindingHandlers.modal = {
+            init: function (element, valueAccessor) {
+                $(element).modal({
+                    show: false
+                });
+
+                var value = valueAccessor();
+                if (typeof value === 'function') {
+                    $(element).on('hide.bs.modal', function () {
+                        value(false);
+                    });
+                }
+                ko.utils.domNodeDisposal.addDisposeCallback(element, function () {
+                    $(element).modal("destroy");
+                });
+
+            },
+            update: function (element, valueAccessor) {
+                var value = valueAccessor();
+                if (ko.utils.unwrapObservable(value)) {
+                    $(element).modal('show');
+                } else {
+                    $(element).modal('hide');
+                }
+            }
+        }
+
         $body = $("body");
 
         $(document).on({
-            ajaxStart: function() { $body.addClass("loading");    },
-            ajaxStop: function() { $body.removeClass("loading"); }
+            ajaxStart: function () {
+                $body.addClass("loading");
+            },
+            ajaxStop: function () {
+                $body.removeClass("loading");
+            }
         });
     });
 });

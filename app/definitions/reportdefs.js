@@ -1,7 +1,7 @@
 define(
     function () {
         return {
-            'Assets' :{
+            'Assets': {
                 type: 'bar',
                 headers: ['Jurisdiction', 'Functional Class', 'Miles', 'Lane Miles'],
                 fields: ['Jurisdiction', 'FunctionalClass', 'Length', 'LaneMiles'],
@@ -10,6 +10,14 @@ define(
                 averages: [],
                 tabs: ['Roads', 'Bridges'],
                 dataKeys: ['RouteFeatureResults', 'BridgeFeatureResults'],
+                graphMetrics: [
+                    {name: "Miles", value: "Length"},
+                    {name: 'Lane Miles', value: "LaneMiles"}
+                ],
+                levelOrders: [
+                    {name: "By Jurisdiction, then by Class", value: ['Jurisdiction', 'FunctionalClass']},
+                    {name: "By Class, then by Jurisdiction", value: ['FunctionalClass', 'Jurisdiction']}
+                ]
             }
         };
-});
+    });

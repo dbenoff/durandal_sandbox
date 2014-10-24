@@ -1,79 +1,42 @@
-define(["knockout", "durandal/app", "durandal/system", "highcharts", 'plugins/http', 'jquery-ui'], function (ko, app, system, highcharts, http, jqueryui) {
-    var
-    // Public Properties
-        todos = ko.observableArray(),
-        selectedTodo = ko.observable(),
-        isLoading = ko.observable(false),
-
-    // Private Properties
-        messageTitle = "Application Message",
-        message = "Hello from your application",
+define(['durandal/system', 'plugins/http', 'durandal/app', 'knockout', 'bootstrap', 'jquery-ui', '../config/appstate', './customModal', 'cookie', 'validator', 'plugins/router'],
+    function (system, http, app, ko, bootstrap, jqueryui, appstate, customModal, cookie, validator, router) {
 
 
-        attached = function (view, parent) {
+        return{
+
+            hasCookie: ko.observable(false),
+            username: ko.observable(),
+
+            activate: function () {
+
+                var appCookie = $.cookie('app');
+                if(appCookie){
+                    this.hasCookie(true);
+                    appstate.username = $.cookie('name');
+                    this.username(appstate.username);
+                }
 
 
-        },
 
-        callback = function (response) {
-            console.log(response); // server response
-        }
-    // Event Handlers
-    onTodoClick = function onTodoClick(note) {
-        app.showMessage(note.content, note.title);
-    },
+                //uncomment for testing
+                /*$.get("assets/json/results.json",
+                    function (queryData) {
 
-        onButtonClick = function onButtonClick() {
-            app.showMessage(message, messageTitle);
-        },
+                        var data = {};
+                        data.BridgeFeatureResults = queryData.BridgeFeatureResults;
+                        appstate.queryResults = data;
+                        appstate.queryName = 'Assets';
+                    }
+                );*/
+            },
 
-        // Lifecycle Methods
-        activate = function activate() {
-            isLoading(true);
+            showLoginModal: function () {
+                customModal.show().then(function (response) {
+                    router.navigate('queryconfig');
+                });
+            }
 
-            return loadTodos().then(function (loadedTodos) {
-                todos(loadedTodos);
-                isLoading(false);
-
-            });
-        },
-
-        deactivate = function deactivate() {
-            selectedTodo(null);
-        },
-
-        // Private Methods
-        loadTodos = function () {
-            return system.defer(function (dfd) {
-                setTimeout(function () {
-                    dfd.resolve([
-                        {
-                            title: "Create your first ViewModel",
-                            content: "To create a ViewModel using yeoman you could call <strong>$ yo durandal:viewmodel.</strong>"
-                        },
-                        {
-                            title: "Test your first ViewModel",
-                            content: "To create Spec for your ViewModel using yeoman you could call <strong>$ yo durandal:viewmodeltest.</strong>"
-                        },
-                        {
-                            title: "Create View for your ViewModel",
-                            content: "To create a View using yeoman you could call <strong>$ yo durandal:view.</strong>"
-                        }
-                    ]);
-                }, 1500);
-            });
         };
 
-    return {
-        todos: todos,
-        selectedTodo: selectedTodo,
-        isLoading: isLoading,
 
-        onTodoClick: onTodoClick,
-        onButtonClick: onButtonClick,
-
-        activate: activate,
-        deactivate: deactivate,
-        compositionComplete: attached
-    };
-});
+    });

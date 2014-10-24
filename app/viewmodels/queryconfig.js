@@ -1,4 +1,4 @@
-define(['plugins/http', 'durandal/app', 'knockout', 'jstree', 'bootstrap', 'jquery-ui', 'config', 'appstate', 'plugins/router', 'tabledefs'],
+define(['plugins/http', 'durandal/app', 'knockout', 'jstree', 'bootstrap', 'jquery-ui', '../config/config', '../config/appstate', 'plugins/router', '../definitions/tabledefs'],
     function (http, app, ko, jstree, bootstrap, jqueryui, config, appstate, router, tabledefs) {
 
         return {
@@ -22,6 +22,7 @@ define(['plugins/http', 'durandal/app', 'knockout', 'jstree', 'bootstrap', 'jque
             assetTreeNodes: ko.observableArray([]),
 
             resetObservables: function () {
+                this.selectedQuery(null);
                 this.selectedGeographicType(null);
                 this.useGeographicFilter(null);
                 this.geoFilters([]);
@@ -31,7 +32,6 @@ define(['plugins/http', 'durandal/app', 'knockout', 'jstree', 'bootstrap', 'jque
 
 
             activate: function () {
-                this.resetObservables();
 
                 this.areaTree = {};
                 this.assetTree = {};
@@ -131,6 +131,14 @@ define(['plugins/http', 'durandal/app', 'knockout', 'jstree', 'bootstrap', 'jque
                     that.updateAssetSelection(e, data)
                 });
 
+                this.selectedQuery.subscribe(function (newValue) {
+                    that.selectedGeographicType(null);
+                    that.useGeographicFilter(null);
+                    that.geoFilters([]);
+                    that.useAssetFilter(null);
+                    that.assetFilters([]);
+                });
+
                 this.selectedGeographicType.subscribe(function (newValue) {
                     var geoTypeName;
                     $(that.geographicTypes).each(function (index, type) {
@@ -192,6 +200,7 @@ define(['plugins/http', 'durandal/app', 'knockout', 'jstree', 'bootstrap', 'jque
 
             updateAssetSelection: function (e, data) {
                 this.values = $("#assetTree").jstree("get_checked", {full: true}, true);
+                //if a root node is checked, the child nodes are all included in the values array along with the parent
                 if (this.values.length > 0) {
                     this.parentNodeIds = [];
                     this.filteredValues = [];
@@ -199,14 +208,14 @@ define(['plugins/http', 'durandal/app', 'knockout', 'jstree', 'bootstrap', 'jque
                     $(this.values).each(function (index, node) {
                         if (!node.original.parentId) {
                             that.parentNodeIds.push(node.original.text);
-                            that.filteredValues.push(node);
+                            that.filteredValues.push(node); //this is a root, it has no parent id
                         }
                     });
 
                     $(this.values).each(function (index, node) {
                         if (node.original.parentId) {
                             if (that.parentNodeIds.indexOf(node.original.parentId) == -1) {
-                                that.filteredValues.push(node);
+                                that.filteredValues.push(node); //this is a child, and the root wasn't selected, so include it
                             }
                         }
                     });
@@ -291,7 +300,7 @@ define(['plugins/http', 'durandal/app', 'knockout', 'jstree', 'bootstrap', 'jque
                 query.Query.DisplayParameters = [];
                 query.Query.DisplayParameters.push(geoParameter);
 
-                if(bridgeAssetValuesToSubmit.length > 0){
+                if (bridgeAssetValuesToSubmit.length > 0) {
                     var bridgeParameter = {};
                     bridgeParameter.Name = 'Bridges';
                     bridgeParameter.Selected = true;
@@ -301,7 +310,7 @@ define(['plugins/http', 'durandal/app', 'knockout', 'jstree', 'bootstrap', 'jque
                     query.Query.DisplayParameters.push(bridgeParameter);
                 }
 
-                if(roadAssetValuesToSubmit.length > 0){
+                if (roadAssetValuesToSubmit.length > 0) {
                     var roadParameter = {};
                     roadParameter.Name = 'Roads';
                     roadParameter.Selected = true;

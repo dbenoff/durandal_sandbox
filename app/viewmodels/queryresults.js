@@ -1,5 +1,5 @@
-define(['plugins/http', 'durandal/app', 'knockout', 'jstree', 'bootstrap', 'jquery-ui', 'datatables', 'jquery-ui', 'appstate', 'plugins/router', 'tabledefs'],
-    function (http, app, ko, jstree, bootstrap, jqueryui, datatables, jqueryui, appstate, router, tabledefs) {
+define(['plugins/http', 'durandal/app', 'knockout', 'jstree', 'bootstrap', 'jquery-ui', 'datatables', 'jquery-ui', '../config/appstate', 'plugins/router', '../definitions/tabledefs', '../config/config'],
+    function (http, app, ko, jstree, bootstrap, jqueryui, datatables, jqueryui, appstate, router, tabledefs, config) {
 
         return {
             displayName: 'Query Results',
@@ -10,7 +10,7 @@ define(['plugins/http', 'durandal/app', 'knockout', 'jstree', 'bootstrap', 'jque
                 var data = appstate.queryResults;
                 var queryName = appstate.queryName;
                 var configuredTables = [];
-                if(data && queryName){
+                if (data && queryName) {
                     var tabledef = tabledefs[queryName];
                     $(tabledef.tabs).each(function (index, tabname) {
                         var dataKey = tabledef.dataKeys[index];
@@ -25,7 +25,7 @@ define(['plugins/http', 'durandal/app', 'knockout', 'jstree', 'bootstrap', 'jque
                     });
                 }
                 if (configuredTables.length < 1) {
-                    app.showMessage('No results available to display, please execute a query.', 'Error').then(function(dialogResult){
+                    app.showMessage(config.noResultsMessage.message, config.noResultsMessage.title).then(function (dialogResult) {
                         router.navigate('queryconfig');
                     });
                     return;
